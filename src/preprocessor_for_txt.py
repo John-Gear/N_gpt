@@ -1,8 +1,12 @@
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 import re
 
 # Папка с лекциями
-FOLDER = Path(r"C:\Users\JohnOnGear\Desktop\лекции")
+load_dotenv()
+path_str = os.getenv("PATH_TO_LECTURE")
+FOLDER = Path(path_str)
 
 TIME_TAG_PATTERN = re.compile(r"\[\d{2}:\d{2}:\d{2}\]")
 
