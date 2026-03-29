@@ -8,11 +8,15 @@ from typing import Dict, List
 from dotenv import load_dotenv
 import os
 
+load_dotenv()
+
 # чистые лекции
-INPUT_DIR = os.getenv("PATH_TO_LECTURE")
+input_dir_env = os.getenv("PATH_TO_LECTURE")
+INPUT_DIR = Path(input_dir_env)
 
 # обработанные чанки
-OUTPUT_FILE = os.getenv("PATH_TO_CHUNKED")
+output_file_env = os.getenv("PATH_TO_CHUNKED")
+OUTPUT_FILE = Path(output_file_env)
 
 CHUNK_SIZE = 1600
 
@@ -30,15 +34,15 @@ def is_valid_sentence_dot(text: str, dot_index: int) -> bool:
     if text[dot_index] != ".":
         return False
 
-    # Проверка на троеточие
     prev_char = text[dot_index - 1] if dot_index - 1 >= 0 else ""
     next_char = text[dot_index + 1] if dot_index + 1 < len(text) else ""
 
+    # Проверка на троеточие
     if prev_char == "." or next_char == ".":
         return False
 
-    # Проверка на двоеточие
-    if prev_char == ".." or next_char == "..":
+    # Проверка на двоеточие рядом с точкой
+    if prev_char == ":" or next_char == ":":
         return False
 
     return True
@@ -47,26 +51,26 @@ def is_valid_sentence_dot(text: str, dot_index: int) -> bool:
 def find_chunk_end(text: str, start: int, chunk_size: int, min_chunk_size: int) -> int:
     text_len = len(text)
 
-    # Если вдруг старт уже за пределами текста — возвращаем конец текста
+    # Если старт уже за пределами текста
     if start >= text_len:
         return text_len
 
     # Целевой конец чанка
     target_end = min(start + chunk_size, text_len)
 
-    # Минимальный размер чанка
+    # Минимально допустимый конец чанка
     min_end = min(start + min_chunk_size, text_len)
 
+    # Если дошли до конца текста
     if target_end >= text_len:
         return text_len
 
-    # Ищем точку от min_end до target_end включительно
+    # Ищем последнюю подходящую точку от min_end до target_end
     for i in range(target_end, min_end - 1, -1):
         if text[i] == "." and is_valid_sentence_dot(text, i):
-            # чтобы точка вошла в чанк
-            return i + 1
+            return i + 1  # чтобы точка вошла в чанк
 
-    # крайний случай режем по размеру чанка
+    # Крайний случай — режем по размеру чанка
     return target_end
 
 # Ф-ция режет текстовую лекцию
@@ -76,7 +80,6 @@ def make_chunks(text: str, doc_id: str, file_name: str) -> List[Dict]:
     chunk_num = 1
     text_len = len(text)
 
-    # цикл длинной на всю лекцию
     while start < text_len:
         end = find_chunk_end(
             text=text,
@@ -103,14 +106,14 @@ def make_chunks(text: str, doc_id: str, file_name: str) -> List[Dict]:
             }
         )
 
-        # Если дошли до конца текста завершаем
+        # Если дошли до конца текста — завершаем
         if end >= text_len:
             break
 
-        # каждый следующий чанк учитывает overlap предидущего (чтобы конец предидущей мысли повторился в след. чанке)
+        # Следующий чанк начинается с overlap предыдущего
         next_start = max(0, end - OVERLAP)
 
-        # Защита от зацикливания (если вдруг overlap слишком большой и старт не сдвинулся)
+        # Защита от зацикливания
         if next_start <= start:
             next_start = end
 
@@ -128,7 +131,7 @@ def process_all_files(input_dir: Path) -> List[Dict]:
         raise FileNotFoundError(f"В папке {input_dir} не найдено .txt файлов")
 
     for file_path in txt_files:
-        raw_text = file_path.read_text(encoding="utf-8")
+        text = file_path.read_text(encoding="utf-8")
 
         doc_id = file_path.stem
         file_name = file_path.name
@@ -138,7 +141,6 @@ def process_all_files(input_dir: Path) -> List[Dict]:
 
         print(f"{file_name}: {len(chunks)} chunks")
 
-    # один общий список чанков по всем лекциям
     return all_chunks
 
 # Ф-ция сохраняет чанки в формате JSONL
