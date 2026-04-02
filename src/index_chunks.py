@@ -67,3 +67,5 @@ for i, chunk in enumerate(tqdm(load_chunks(CHUNKS_FILE))):
 # остатки
 if points:
     client.upsert(collection_name=COLLECTION_NAME, points=points)
+
+client.close()
