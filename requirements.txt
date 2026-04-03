@@ -2,3 +2,4 @@ python-dotenv
 qdrant-client
 sentence-transformers
 flask
+requests
