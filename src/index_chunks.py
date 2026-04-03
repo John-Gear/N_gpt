@@ -12,10 +12,12 @@ load_dotenv()
 chunked_file = os.getenv("PATH_TO_CHUNKED")
 CHUNKS_FILE = Path(chunked_file)
 
-COLLECTION_NAME = "lectures"
+qdrant_collections = os.getenv("QDRANT_COLLECTION")
+COLLECTION_NAME = qdrant_collections
 
 # модель embedding bge-m3
-model = SentenceTransformer("BAAI/bge-m3")
+emb_model = os.getenv("EMBEDDING_MODEL")
+model = SentenceTransformer(emb_model)
 
 # инициализируем векторную бд qdrant
 vector_db = os.getenv("PATH_TO_VECTOR_DB")
@@ -49,6 +51,8 @@ for i, chunk in enumerate(tqdm(load_chunks(CHUNKS_FILE))):
         "chunk_id": chunk["chunk_id"],
         "chunk_index": chunk["chunk_index"],
         "text": text,
+        "start_char": chunk["start_char"],
+        "end_char": chunk["end_char"],
     }
 
     points.append(
