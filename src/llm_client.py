@@ -7,8 +7,11 @@ load_dotenv()
 class OpenRouterClient:
     def __init__(self):
         self.api_key = os.getenv("OPENROUTER_API_KEY")
-        self.model = os.getenv("OPENROUTER_MODEL")
+        self.model = os.getenv("OPENROUTER_CHAT_MODEL", "openai/gpt-4o-mini")
         self.base_url = "https://openrouter.ai/api/v1"
+
+        if not self.api_key:
+            raise ValueError("OPENROUTER_API_KEY not found")
 
     def generate(self, prompt: str) -> str:
         headers = {
@@ -19,19 +22,22 @@ class OpenRouterClient:
         payload = {
             "model": self.model,
             "messages": [
-                {"role": "user", "content": prompt}
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
             ],
-            "temperature": 0.2,
+            "temperature": 0.1,
+            "max_tokens": 700,
         }
 
         response = requests.post(
             f"{self.base_url}/chat/completions",
             headers=headers,
             json=payload,
-            timeout=60,
+            timeout=120,
         )
-
         response.raise_for_status()
-        data = response.json()
 
+        data = response.json()
         return data["choices"][0]["message"]["content"]

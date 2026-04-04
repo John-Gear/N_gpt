@@ -1,35 +1,28 @@
-from typing import Dict, List, Any
-
 class RagService:
     def __init__(self, retriever, llm_client):
         self.retriever = retriever
         self.llm_client = llm_client
 
-    def _build_context(self, hits: List[Dict[str, Any]]) -> str:
+    def _build_context(self, hits):
         if not hits:
-            return "Контекст не найден."
+            return "Фрагменты не найдены."
 
         parts = []
         for i, hit in enumerate(hits, start=1):
-            text = (hit.get("text") or "").strip()
-            doc_id = hit.get("doc_id") or "unknown_doc"
-            chunk_id = hit.get("chunk_id") or "unknown_chunk"
-            score = hit.get("score")
-
             parts.append(
                 f"[ФРАГМЕНТ {i}]\n"
-                f"doc_id: {doc_id}\n"
-                f"chunk_id: {chunk_id}\n"
-                f"score: {score}\n"
-                f"text:\n{text}"
+                f"doc_id: {hit.get('doc_id')}\n"
+                f"chunk_id: {hit.get('chunk_id')}\n"
+                f"score: {hit.get('score')}\n"
+                f"text:\n{(hit.get('text') or '').strip()}"
             )
 
         return "\n\n" + ("\n\n" + "=" * 80 + "\n\n").join(parts)
 
-    def _build_prompt(self, query: str, hits: List[Dict[str, Any]]) -> str:
+    def _build_prompt(self, query, hits):
         context = self._build_context(hits)
 
-        prompt = f"""
+        return f"""
 Ты отвечаешь по лекциям Machine Learning и Deep Learning.
 
 Тебе переданы:
@@ -51,9 +44,7 @@ class RagService:
 
 """.strip()
 
-        return prompt
-
-    def ask(self, query: str, top_k: int = 5) -> Dict[str, Any]:
+    def ask(self, query, top_k=5):
         hits = self.retriever.search(query=query, top_k=top_k)
         prompt = self._build_prompt(query=query, hits=hits)
         answer = self.llm_client.generate(prompt)
@@ -62,5 +53,4 @@ class RagService:
             "query": query,
             "answer": answer,
             "chunks": hits,
-            "prompt": prompt,
         }
