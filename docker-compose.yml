@@ -10,4 +10,4 @@ services:
     volumes:
       - ./data:/app/data
     ports:
-      - "8001:8001"
+      - "8001:8000"
