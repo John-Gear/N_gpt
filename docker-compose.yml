@@ -1,28 +1,13 @@
 version: "3.9"
 
 services:
-  rag-api:
-    build: ./rag_api
-    container_name: rag-api
+  n-gpt:
+    build: .
+    container_name: n-gpt
     restart: unless-stopped
     env_file:
-      - ./rag_api/.env
+      - .env
     volumes:
       - ./data:/app/data
     ports:
-      - "8000:8000"
-    networks:
-      - app-net
-
-  site:
-    build: ./site
-    container_name: site
-    restart: unless-stopped
-    depends_on:
-      - rag-api
-    networks:
-      - app-net
-
-networks:
-  app-net:
-    driver: bridge
+      - "8001:8001"

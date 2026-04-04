@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify
 
-from retriever import retriever
-from llm_client import OpenRouterClient
-from rag_service import RagService
+from src.retriever import retriever
+from src.llm_client import OpenRouterClient
+from src.rag_service import RagService
 
 app = Flask(__name__)
 
