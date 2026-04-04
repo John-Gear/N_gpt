@@ -1,7 +1,8 @@
 class RagService:
-    def __init__(self, retriever, llm_client):
+    def __init__(self, retriever, llm_client, score_threshold=0.35):
         self.retriever = retriever
         self.llm_client = llm_client
+        self.score_threshold = score_threshold
 
     def _build_context(self, hits):
         if not hits:
@@ -23,30 +24,36 @@ class RagService:
         context = self._build_context(hits)
 
         return f"""
-Ты отвечаешь по лекциям Machine Learning и Deep Learning.
+Ты помощник по лекциям Machine Learning и Deep Learning.
 
-Тебе переданы:
-1. Вопрос пользователя
-2. Фрагменты лекций, найденные retriever'ом
+Тебе дан вопрос и найденные фрагменты лекций.
 
-Твоя задача дать ответ пользователю. Соблюдай жесткие правила:
-1. Отвечай только на основе переданных фрагментов.
-2. Не добавляй знания из памяти, интернета или своих догадок.
-3. Если информации во фрагментах недостаточно, так и скажи: "В найденных фрагментах недостаточно информации для полного ответа".
-4. Не придумывай определения, которых нет в контексте.
-5. Пиши просто и понятно, но без отсебятины.
+Правила:
+- опирайся на найденные фрагменты
+- если фрагменты шумные, извлекай смысл
+- если информации мало — дай максимально полезный краткий ответ на основе того, что есть
+- не уходи в лишние рассуждения
+- отвечай просто и понятно
 
-Вопрос пользователя:
+Вопрос:
 {query}
 
-Контекст из базы знаний (топ 5 чанков):
+Контекст:
 {context}
 
-ВАЖНО: Если вопрос пользователя не относится к теме Machine Learning / Data Science или ты не получил ни одного релевантного чанка из базы знаний отвечай строго: "Информации по вашему запросу нет"
+Ответ:
 """.strip()
 
     def ask(self, query, top_k=5):
         hits = self.retriever.search(query=query, top_k=top_k)
+
+        if not hits or hits[0]["score"] < self.score_threshold:
+            return {
+                "query": query,
+                "answer": "Информации по вашему запросу нет",
+                "chunks": hits,
+            }
+
         prompt = self._build_prompt(query=query, hits=hits)
         answer = self.llm_client.generate(prompt)
 
