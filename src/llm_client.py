@@ -13,7 +13,15 @@ class OpenRouterClient:
         if not self.api_key:
             raise ValueError("OPENROUTER_API_KEY not found")
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, log_callback=None) -> str:
+        if log_callback:
+            log_callback(
+                step="rag_generation_started",
+                message="Найденные чанки + промт отправлены в gpt40-mini по api",
+                source="rag_service.py",
+                extra={"model": self.model},
+            )
+
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -40,4 +48,17 @@ class OpenRouterClient:
         response.raise_for_status()
 
         data = response.json()
-        return data["choices"][0]["message"]["content"]
+        answer = data["choices"][0]["message"]["content"]
+
+        if log_callback:
+            log_callback(
+                step="rag_generation_finished",
+                message="OpenRouter вернул ответ в rag_service.py",
+                source="rag_service.py",
+                extra={
+                    "model": self.model,
+                    "answer_length": len(answer),
+                },
+            )
+
+        return answer
