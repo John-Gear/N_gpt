@@ -47,8 +47,15 @@ class LectureRetriever:
 
         return self.embedding_client.embed([query])[0]
 
-    def search(self, query, top_k=5):
+    def search(self, query, top_k=5, log_callback=None):
+        # 1 этап
+        if log_callback:
+            log_callback("Ваш вопрос отправлен в по API в text-embedding-3-small для преобразования в embedding вектор")
+
         query_vector = self._embed_query(query)
+
+        if log_callback:
+            log_callback("Вопрос успешно преобразован в embedding-вектор")
 
         result = self.client.query_points(
             collection_name=self.collection_name,
@@ -57,13 +64,19 @@ class LectureRetriever:
             with_payload=True,
         )
 
-        return [
+        hits = [
             {
                 "score": point.score,
                 **(point.payload or {}),
             }
             for point in result.points
         ]
+
+        # 2 этап
+        if log_callback:
+            log_callback(f"По Вашему вопросу в базе данных найдено {len(hits)} релевантных чанков")
+
+        return hits
 
     def close(self):
         self.client.close()

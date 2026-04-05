@@ -13,10 +13,6 @@ rag = RagService(retriever=retriever, llm_client=llm_client)
 def health():
     return jsonify({"status": "ok"}), 200
 
-@app.get("/logger")
-def logger():
-    return jsonify(rag.get_last_logs()), 200
-
 @app.post("/ask")
 def ask():
     data = request.get_json(silent=True) or {}
@@ -43,7 +39,13 @@ def ask():
         }), 200
 
     except Exception as e:
-        return jsonify({"error": str(e), "logs": rag.get_last_logs()}), 500
+        return jsonify({"error": str(e)}), 500
+
+@app.get("/logger")
+def logger():
+    return jsonify({
+        "logs": rag.get_logs()
+    }), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=False)

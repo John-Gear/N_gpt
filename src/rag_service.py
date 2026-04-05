@@ -45,20 +45,39 @@ class RagService:
 """.strip()
 
     def ask(self, query, top_k=5):
-        hits = self.retriever.search(query=query, top_k=top_k)
+        self.logs = []
 
-        if not hits or hits[0]["score"] < self.score_threshold:
+        hits = self.retriever.search(
+            query=query,
+            top_k=top_k,
+            log_callback=self._log
+        )
+
+        if not hits:
             return {
                 "query": query,
-                "answer": "Информации по вашему запросу нет",
+                "answer": "Релевантной информации в базе данных по вашему запросу нет",
                 "chunks": hits,
+                "logs": self.logs,
             }
 
+        self._log("Найденные чанки + промт отправлены по API в gpt4o-mini для подготовки ответа")
         prompt = self._build_prompt(query=query, hits=hits)
-        answer = self.llm_client.generate(prompt)
+
+        answer = self.llm_client.generate(
+            prompt,
+            log_callback=self._log
+        )
 
         return {
             "query": query,
             "answer": answer,
             "chunks": hits,
+            "logs": self.logs,
         }
+
+    def _log(self, message):
+        self.logs.append(message)
+
+    def get_logs(self):
+        return self.logs
