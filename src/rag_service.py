@@ -3,6 +3,7 @@ class RagService:
         self.retriever = retriever
         self.llm_client = llm_client
         self.score_threshold = score_threshold
+        self.logs = []
 
     def _build_context(self, hits):
         if not hits:
