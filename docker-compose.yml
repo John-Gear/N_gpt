@@ -11,5 +11,9 @@ services:
       - ./data:/app/data
     ports:
       - "8001:8000"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    networks:
+      - johngear_shared_net
+
+networks:
+  johngear_shared_net:
+    external: true
